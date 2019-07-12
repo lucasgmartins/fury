@@ -1,0 +1,21 @@
+{
+  "app": {
+    "name" : "Fury",
+    "port": 9000,
+    "uri": "http://localhost:9000",
+    "context" : "/psp"
+  },
+  "mongo": {
+    "host"      : "docker",
+    "database"  : "psp-test",
+    "options": {
+      "autoReconnect"    : true,
+      "poolSize"          : 10,
+      "reconnectTries"    : 5,
+      "reconnectInterval" : 2000
+    }
+  },
+  "jwt": {
+    "secret" : "secret_token"
+  }
+}
