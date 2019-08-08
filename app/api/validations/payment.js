@@ -10,9 +10,6 @@ const Joi = require('@hapi/joi');
 // CONST
 //###################################
 
-const PAYMENT_METHOD = require('../../model/payment-method');
-const PAYMENT_STATUS = require('../../model/payable-status');
-
 //###################################
 // EXPORTS
 //###################################

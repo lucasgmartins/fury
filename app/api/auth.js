@@ -5,8 +5,12 @@
 // NPM MODULES
 //###################################
 
+const _            = require('lodash');
 const { google }   = require('googleapis');
 const MailComposer = require('nodemailer/lib/mail-composer');
+const mongoose     = require('mongoose');
+
+const Conversation = mongoose.model('conversation');
 
 //###################################
 // VALIDATIONS
@@ -44,19 +48,26 @@ const agoogle =  {
       const authObj = new google.auth.OAuth2();
       authObj.setCredentials({ access_token: token });
 
-      await welcomeEmail(authObj, 'Bruno', 'lucas.martins@redspark.io', 'Engineer', 'Software Engineer II');
+      const gmail  = google.gmail({ version: 'v1', auth: authObj });
+      const x      = await gmail.users.threads.list({ userId: 'me', auth: authObj});
+
+      // console.log(x);
+
+      // await selectedEmail(authObj, 'Bruno', 'lucas.martins@redspark.io', 'Engineer', 'Software Engineer II');
+
+      await replyEmail(authObj, 'Bruno', 'lucas.martins@redspark.io');
 
       return '<pre>' + JSON.stringify(request.auth.credentials, null, 4) + '</pre>';
     }
   }
 };
 
-async function welcomeEmail(auth, name, to, team, role) {
+async function selectedEmail(auth, name, to, team, role) {
 
-  const subject     = '🤘 Olá, você foi selecionado para o processo seletivo da redspark. ';
+  const subject     = '🤘 Olá, você foi selecionado para o processo seletivo da redspark.';
   const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
 
-  const html        = `Olá Lucas, <br /><br />,
+  const html        = `Olá Lucas, <br /><br />
     Meu nome é Fury, um robô do time de recrutamento da redspark, sou responsável por encontrar o melhor horário para bater um papo com nosso time de ${team} sobre a vaga de ${role}.
     Gostaria de sugerir horários para podermos que o time venha a conhecer você melhor. <br /><br />
 
@@ -78,13 +89,7 @@ async function welcomeEmail(auth, name, to, team, role) {
 
   const mail = await new MailComposer(emailParams).compile().build()
 
-  // const encodedMessage = Buffer.from(mail)
-  //   .toString('base64')
-  //   // .replace(/\+/g, '-')
-  //   // .replace(/\//g, '_')
-  //   // .replace(/=+$/, '');
-
-  const gmail  = google.gmail({ version: 'v1', auth: auth });
+  const gmail  = google.gmail({ version: 'v1', auth });
 
   const res = await gmail.users.messages.send({
     userId: 'me',
@@ -98,7 +103,63 @@ async function welcomeEmail(auth, name, to, team, role) {
     auth
   });
 
-  console.log(res.data);
+  const newMessage = {
+    message_id  : res.data.id,
+    created_at  : Date.now()
+  }
+
+  return Conversation.create({ thread_id: res.data.threadId, emails: [newMessage] });
+}
+
+async function replyEmail(auth, name, to, team, role) {
+
+  const subject     = 'Sim'; //Olá, você foi selecionado para o processo seletivo da redspark. 2
+  const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
+
+  const html        = `Olá Lucas, <br /><br />,
+    Xurubleblas
+
+    Abraços
+    Fury
+  `
+
+  const gmail  = google.gmail({ version: 'v1', auth });
+
+  const conversation = await Conversation.findOne();
+  const threadId     = conversation.thread_id;
+
+  const emailParams = {
+    from        : 'From: Lucas Martins <lucas.martins@redspark.io>',
+    to          : `${name} <${to}>`,
+    subject     : utf8Subject,
+    html        : html,
+    references  : threadId,
+    inReplyTo   : threadId
+  }
+
+  const mail = await new MailComposer(emailParams).compile().build()
+
+  const res = await gmail.users.messages.send({
+    userId: 'me',
+    requestBody: {
+      raw: mail
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, ''),
+      threadId: threadId
+    },
+    auth
+  });
+
+  const newConversation = {
+    message_id  : res.data.id,
+    created_at  : Date.now()
+  }
+
+  conversation.emails.push(newConversation);
+
+  return conversation.save();
 }
 
 module.exports = [
