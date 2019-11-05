@@ -21,7 +21,7 @@
     "lodash": "^4.17.14",
     "mailcomposer": "^4.0.2",
     "moment": "^2.24.0",
-    "mongoose": "^5.6.3",
+    "mongoose": "^5.7.5",
     "nconf": "^0.10.0",
     "node-gmail-api": "^0.6.1",
     "nodemailer": "^6.2.1",
